@@ -8,15 +8,13 @@ import scala.NamedTuple.*
 
 object Database:
 
-  transparent inline def query[S <: String & Singleton](query: S)(using connection: Connection): Iterator[?] =
+  transparent inline def query(inline query: String)(using connection: Connection): Iterator[?] =
     ${ queryImpl('query, 'connection) }
   
 
-  private def queryImpl[S <: String & Singleton : Type](queryExpr: Expr[S], connection: Expr[Connection])(using Quotes): Expr[Iterator[?]] =
-    import quotes.reflect.*
-
+  private def queryImpl(queryExpr: Expr[String], connection: Expr[Connection])(using Quotes): Expr[Iterator[?]] =
     // 1. get the query as a value
-    val ConstantType(StringConstant(query)) = TypeRepr.of[S]: @unchecked
+    val query = queryExpr.valueOrAbort
 
     // 2. dry-run the query to get the column names and types
     val columns = dryRun(query)
