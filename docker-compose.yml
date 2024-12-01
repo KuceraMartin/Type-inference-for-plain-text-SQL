@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=eshop
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d eshop -U user" ]
+      interval: 1s
+      timeout: 2s
+      retries: 5
+
+  migration:
+    image: flyway/flyway:11-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${DOCKER_HOST_DIR:-.}/sql:/flyway/sql
+      - ${DOCKER_HOST_DIR:-.}/sql_data:/flyway/sql_data
+    environment:
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/eshop
+      - FLYWAY_USER=user
+      - FLYWAY_PASSWORD=1234
+      - FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/sql_data
+      - FLYWAY_POSTGRESQL_TRANSACTIONAL_LOCK=false
+    command: [ "migrate" ]
