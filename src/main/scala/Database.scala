@@ -105,7 +105,7 @@ object Database:
       case "text" | "character varying" => TypeRepr.of[String]
       case "integer" => TypeRepr.of[Int]
       case "timestamp without time zone" => TypeRepr.of[java.sql.Timestamp]
-      case _ => throw new Exception(s"Uknown database type $dbType.")
+      case _ => throw new Exception(s"Unknown database type $dbType.")
   end dbTypeToTypeRepr
 
 
