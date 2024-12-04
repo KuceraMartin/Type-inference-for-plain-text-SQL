@@ -13,23 +13,20 @@ object Database:
   
 
   private def queryImpl(queryExpr: Expr[String], connection: Expr[Connection])(using Quotes): Expr[Iterator[?]] =
-    // 1. get the query as a value
-    val query = queryExpr.valueOrAbort
+    // 1. dry-run the query to get the column names and types
+    val columns = dryRun(queryExpr.valueOrAbort)
 
-    // 2. dry-run the query to get the column names and types
-    val columns = dryRun(query)
-
-    // 3. construct the result type
+    // 2. construct the result type
     val resultType = constructNamedTupleTypeRepr(columns)
 
-    // 4. construct the conversion ResultSet => Tuple
+    // 3. construct the conversion ResultSet => Tuple
     def resultSetToTuple(resultSet: Expr[ResultSet]): Expr[Tuple] =
       val values = columns.map: column =>
         val columnNameExpr = Expr(column.name)
         '{ $resultSet.getObject($columnNameExpr) }
       Expr.ofTupleFromSeq(values)
 
-    // 5. construct the body of the `query` function
+    // 4. construct the body of the `query` function
     resultType.asType match
       case '[t] => '{
         val statement = $connection.createStatement()
