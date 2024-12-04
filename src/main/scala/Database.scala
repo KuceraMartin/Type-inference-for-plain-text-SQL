@@ -8,7 +8,7 @@ import scala.NamedTuple.*
 
 object Database:
 
-  transparent inline def query(inline query: String)(using connection: Connection): Iterator[?] =
+  transparent inline def query(query: String)(using connection: Connection): Iterator[?] =
     ${ queryImpl('query, 'connection) }
   
 
