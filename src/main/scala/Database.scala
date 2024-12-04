@@ -52,8 +52,9 @@ object Database:
       """
     
     // Running the query in a hacky way - starting an external process and running psql.
-    // Ideally, we would use java.sql just like the runtime app but this is currently not
-    // possible due to a bug in Scala: https://github.com/scala/scala3/issues/20560
+    // Ideally, we would use java.sql just like the runtime app but this would break
+    // autocompletion due to a bug in Metals. The next release of Metals will fix the bug.
+    // https://github.com/scalameta/metals/issues/6494
     Process(s"psql -d '${ Config.dbUri }' -c \"$dryRunQuery\"").!!
       .split('\n')
       .drop(3)
@@ -69,27 +70,27 @@ object Database:
    * Constructs a named tuple type from a list of columns. A named tuple consists
    * of two unnamed tulpes: the names as literal constant string types, and the
    * element types. We construct the two tuples separately and then create the
-   * named tuple type from them,
+   * named tuple type from them.
    */
   private def constructNamedTupleTypeRepr(columns: Seq[Column])(using Quotes) =
     import quotes.reflect.*
 
-    // Helper type lambda to convince the type system that T represents a tuple.
+    // Helper type lambda to convince the type system that T represents a tuple:
     type TupleSubtype[T <: Tuple] = T
 
-    // the first tuple of names
+    // The first tuple of names:
     val names = columns.foldRight(TypeRepr.of[EmptyTuple]): (column, acc) =>
       val name = ConstantType(StringConstant(column.name))
       (name.asType, acc.asType) match
         case ('[n], '[TupleSubtype[ns]]) => TypeRepr.of[n *: ns]
 
-    // the second tuple of element types
+    // The second tuple of element types:
     val types = columns.foldRight(TypeRepr.of[EmptyTuple]): (column, acc) =>
       val tpe = dbTypeToTypeRepr(column.dbType)
       (tpe.asType, acc.asType) match
         case ('[t], '[TupleSubtype[ts]]) => TypeRepr.of[t *: ts]
 
-    // using the two tuple types to create a named tuple type
+    // Using the two tuple types to create a named tuple type:
     (names.asType, types.asType) match
       case ('[TupleSubtype[ns]], '[TupleSubtype[ts]]) => TypeRepr.of[NamedTuple[ns, ts]]
   end constructNamedTupleTypeRepr

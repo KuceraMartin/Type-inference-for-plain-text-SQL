@@ -1,7 +1,7 @@
 import java.sql.*
 
 /**
- * A wrapper over java.sql.ResultsSet that makes it into an Iterator[R]
+ * A wrapper over java.sql.ResultsSet that transforms it into an Iterator[R]
  * @param resultSet The result of an SQL query. It has three important methods:
  *     hasNext: Boolean                        whether there are any more rows available
  *     next(): Boolean                         side-effecting method, moves the cursor to the next row
